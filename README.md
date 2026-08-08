@@ -72,7 +72,7 @@ npx @agegr/pi-web@latest
 ## Features
 
 - **Pick work back up**: browse previous pi conversations by project without digging through terminal history or session paths.
-- **Try different directions safely**: continue from an earlier message or fork a session into a separate route.
+- **Try different directions safely**: use `/tree` to search the full session tree, continue from any saved point, or fork a session into a separate route.
 - **Work across branches**: switch Git worktrees from the sidebar so new sessions and the Explorer follow the checkout you choose.
 - **Chat beside the project**: browse files on the left and preview source, docs, images, audio, and PDFs on the right while the agent works.
 - **See session state clearly**: context usage, cost, compaction state, and system prompt details are visible from the top bar.
@@ -130,6 +130,7 @@ components/
   DirectoryPicker.tsx # browsable and editable working-directory picker
   ChatWindow.tsx      # messages, SSE, image drag/drop, minimap
   ChatInput.tsx       # input bar, model/tools/thinking/compact/slash controls
+  SessionTreeDialog.tsx # full `/tree` navigation and branch-summary choice
   MessageView.tsx     # message, thinking, tool call/result rendering
   ModelsConfig.tsx    # model and auth configuration panel
   SkillsConfig.tsx    # skill management panel

@@ -486,7 +486,9 @@ export class AgentSessionWrapper {
         if (this.inner.isBashRunning) {
           throw new Error("Cannot navigate while a shell command is running");
         }
-        const result = await this.inner.navigateTree(command.targetId as string, {});
+        const result = await this.inner.navigateTree(command.targetId as string, {
+          summarize: command.summarize as boolean | undefined,
+        });
         return { cancelled: result.cancelled };
       }
 

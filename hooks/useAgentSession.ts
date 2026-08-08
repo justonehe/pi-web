@@ -145,7 +145,7 @@ export interface SlashCommandInfo {
 
 export type BuiltinSlashCommandResult =
   | { handled: false }
-  | { handled: true; message?: string; error?: string; action?: "openSessionStats" };
+  | { handled: true; message?: string; error?: string; action?: "openSessionStats" | "openSessionTree" };
 
 export interface UseAgentSessionOptions {
   session: SessionInfo | null;
@@ -155,9 +155,14 @@ export interface UseAgentSessionOptions {
   onSessionForked?: (newSessionId: string) => void;
   modelsRefreshKey?: number;
   chatInputRef?: React.RefObject<ChatInputHandle | null>;
-  onBranchDataChange?: (tree: SessionTreeNode[], activeLeafId: string | null, onLeafChange: (leafId: string | null) => void) => void;
+  onBranchDataChange?: (
+    tree: SessionTreeNode[],
+    activeLeafId: string | null,
+    onLeafChange: (leafId: string | null, options?: { summarize?: boolean }) => Promise<void>,
+  ) => void;
   onSystemPromptChange?: (prompt: string | null) => void;
   onSessionStatsPanelOpen?: () => void;
+  onSessionTreePanelOpen?: (sessionId: string) => void;
   setToolPreset?: (preset: "none" | "default" | "full") => void;
 }
 
@@ -303,6 +308,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const {
     session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked,
     modelsRefreshKey, onBranchDataChange, onSystemPromptChange, onSessionStatsPanelOpen,
+    onSessionTreePanelOpen,
   } = opts;
 
   const isNew = session === null && newSessionCwd !== null;
@@ -1429,16 +1435,33 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     await loadContext(sid, entryId);
   }, [loadContext]);
 
-  const handleLeafChange = useCallback(async (leafId: string | null) => {
+  const handleLeafChange = useCallback(async (
+    leafId: string | null,
+    options: { summarize?: boolean } = {},
+  ) => {
     if (bashRunningRef.current) return;
-    setActiveLeafId(leafId);
     const sid = sessionIdRef.current;
     if (!sid) return;
-    await loadContext(sid, leafId);
-    if (leafId) {
-      sendAgentCommand(sid, { type: "navigate_tree", targetId: leafId }).catch(() => {});
+    if (!leafId) {
+      setActiveLeafId(null);
+      await loadContext(sid, null);
+      return;
     }
-  }, [loadContext]);
+
+    const result = await sendAgentCommand<{ cancelled?: boolean }>(sid, {
+      type: "navigate_tree",
+      targetId: leafId,
+      summarize: options.summarize ?? false,
+    });
+    if (result?.cancelled) return;
+
+    if (options.summarize) {
+      await loadSession(sid);
+    } else {
+      setActiveLeafId(leafId);
+      await loadContext(sid, leafId);
+    }
+  }, [loadContext, loadSession]);
 
   const handleModelChange = useCallback(async (provider: string, modelId: string) => {
     if (isNew) {
@@ -1543,7 +1566,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (!result.handled) return result;
       if (result.error) {
         addNotice({ type: "error", message: result.error });
-      } else if (result.action !== "openSessionStats") {
+      } else if (!result.action) {
         addNotice({ type: "success", message: result.message ?? "Command completed" });
       }
       return result;
@@ -1595,6 +1618,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           return complete({ handled: true, action: "openSessionStats" });
         }
 
+        case "tree": {
+          if (!sid) return complete({ handled: true, error: "No active session" });
+          if (args) return complete({ handled: true, error: "Usage: /tree" });
+          onSessionTreePanelOpen?.(sid);
+          return complete({ handled: true, action: "openSessionTree" });
+        }
+
         case "copy": {
           if (!sid) return complete({ handled: true, error: "No active session" });
           const data = await sendAgentCommand<LastAssistantTextResponse>(sid, { type: "get_last_assistant_text" });
@@ -1612,7 +1642,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     } finally {
       if (commandName === "compact") setIsCompacting(false);
     }
-  }, [addNotice, ensureNewSession, isCompacting, loadModels, loadSession, loadSlashCommands, loadTools, promoteNewSession, onSessionStatsPanelOpen]);
+  }, [addNotice, ensureNewSession, isCompacting, loadModels, loadSession, loadSlashCommands, loadTools, promoteNewSession, onSessionStatsPanelOpen, onSessionTreePanelOpen]);
 
   // Queued (undelivered) messages live in the queue panel only; the chat gets
   // the real user message when pi delivers it (user message_end event). An

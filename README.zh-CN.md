@@ -70,7 +70,7 @@ npx @agegr/pi-web@latest
 ## 功能介绍
 
 - **把历史工作接回来**：打开网页就能按项目找到以前的 pi 对话，不必在终端里翻文件或记住会话路径。
-- **放心试不同方向**：可以从某条历史消息重新开始，也可以复制出一条独立的新路线，探索方案时不怕弄乱原来的对话。
+- **放心试不同方向**：使用 `/tree` 搜索完整会话树，从任意已保存节点继续，也可以复制出一条独立的新路线。
 - **跨分支工作**：在侧边栏切换 Git worktree，让新会话和 Explorer 跟随你选择的 checkout。
 - **边聊边看项目文件**：左侧浏览项目文件，右侧打开源码、文档、图片、音频和 PDF；文件变化会自动刷新，适合边让 agent 改边检查结果。
 - **随时掌握会话状态**：在顶部就能看到上下文占用、花费、压缩结果和系统提示，长会话不再像黑箱。
@@ -125,6 +125,7 @@ components/
   DirectoryPicker.tsx # 支持浏览和路径输入的工作目录选择器
   ChatWindow.tsx      # 消息区、SSE、拖拽图片、minimap
   ChatInput.tsx       # 输入栏、模型/工具/thinking/compact/slash controls
+  SessionTreeDialog.tsx # 完整 `/tree` 导航和分支摘要选择
   MessageView.tsx     # 消息、thinking、tool call/result 渲染
   ModelsConfig.tsx    # 模型和认证配置面板
   SkillsConfig.tsx    # 技能管理面板

@@ -129,6 +129,7 @@ const BUILTIN_SLASH_COMMANDS: SlashCommandPaletteItem[] = [
   { name: "reload", description: "chat.commandReload", source: "builtin" },
   { name: "name", description: "chat.commandName", source: "builtin" },
   { name: "session", description: "chat.commandSession", source: "builtin" },
+  { name: "tree", description: "chat.commandTree", source: "builtin" },
   { name: "copy", description: "chat.commandCopy", source: "builtin" },
 ];
 

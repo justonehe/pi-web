@@ -12,6 +12,7 @@ import { SkillsConfig } from "./SkillsConfig";
 import { PluginsConfig } from "./PluginsConfig";
 import { ProjectTrustDialog } from "./ProjectTrustDialog";
 import { BranchNavigator } from "./BranchNavigator";
+import { SessionTreeDialog } from "./SessionTreeDialog";
 import { useTheme } from "@/hooks/useTheme";
 import { useI18n } from "@/hooks/useI18n";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -150,16 +151,30 @@ export function AppShell() {
   // Branch navigator state — populated by ChatWindow via onBranchDataChange
   const [branchTree, setBranchTree] = useState<SessionTreeNode[]>([]);
   const [branchActiveLeafId, setBranchActiveLeafId] = useState<string | null>(null);
-  const branchLeafChangeFnRef = useRef<((leafId: string | null) => void) | null>(null);
+  const [treeDialogSessionId, setTreeDialogSessionId] = useState<string | null>(null);
+  const branchLeafChangeFnRef = useRef<((
+    leafId: string | null,
+    options?: { summarize?: boolean },
+  ) => Promise<void>) | null>(null);
 
-  const handleBranchDataChange = useCallback((tree: SessionTreeNode[], activeLeafId: string | null, onLeafChange: (leafId: string | null) => void) => {
+  const handleBranchDataChange = useCallback((
+    tree: SessionTreeNode[],
+    activeLeafId: string | null,
+    onLeafChange: (leafId: string | null, options?: { summarize?: boolean }) => Promise<void>,
+  ) => {
     setBranchTree(tree);
     setBranchActiveLeafId(activeLeafId);
     branchLeafChangeFnRef.current = onLeafChange;
   }, []);
 
-  const handleBranchLeafChange = useCallback((leafId: string | null) => {
-    branchLeafChangeFnRef.current?.(leafId);
+  const handleBranchLeafChange = useCallback((
+    leafId: string | null,
+    options?: { summarize?: boolean },
+  ) => branchLeafChangeFnRef.current?.(leafId, options) ?? Promise.resolve(), []);
+
+  const handleOpenSessionTree = useCallback((sessionId: string) => {
+    setActiveTopPanel(null);
+    setTreeDialogSessionId(sessionId);
   }, []);
 
   const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
@@ -349,6 +364,7 @@ export function AppShell() {
     setFileTabs([]);
     setActiveFileTabId(null);
     setRightPanelOpen(false);
+    setTreeDialogSessionId(null);
     router.replace("/", { scroll: false });
   }, [router, selectedSession]);
 
@@ -1533,6 +1549,7 @@ export function AppShell() {
               onSystemPromptChange={handleSystemPromptChange}
               onSessionStatsChange={handleSessionStatsChange}
               onSessionStatsPanelOpen={openSessionStatsPanel}
+              onSessionTreePanelOpen={handleOpenSessionTree}
               onContextUsageChange={handleContextUsageChange}
               onOpenFile={handleOpenLinkedFile}
             />
@@ -1676,6 +1693,14 @@ export function AppShell() {
         <rect x="3" y="3" width="18" height="18" rx="2" /><line x1="15" y1="3" x2="15" y2="21" />
       </svg>
     </button>
+    {treeDialogSessionId && (
+      <SessionTreeDialog
+        sessionId={treeDialogSessionId}
+        activeLeafId={branchActiveLeafId}
+        onClose={() => setTreeDialogSessionId(null)}
+        onNavigate={(entryId, options) => handleBranchLeafChange(entryId, options)}
+      />
+    )}
     {modelsConfigOpen && <ModelsConfig onClose={() => { setModelsConfigOpen(false); setModelsRefreshKey((k) => k + 1); }} />}
     {projectTrustDialogOpen && projectTrustCwd && (
       <ProjectTrustDialog

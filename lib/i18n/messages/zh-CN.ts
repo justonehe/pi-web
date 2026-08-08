@@ -241,6 +241,7 @@ export const zhCNLocale: LocalePlugin = {
     "chat.commandReload": "重新加载扩展、技能、提示词和工具",
     "chat.commandName": "设置会话显示名称",
     "chat.commandSession": "显示会话消息、Token 和费用统计",
+    "chat.commandTree": "浏览完整的会话树",
     "chat.commandCopy": "复制最后一条助手消息",
     "chat.compacted": "已压缩",
     "chat.tokensSaved": "节省 {saved}",
