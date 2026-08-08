@@ -12,17 +12,19 @@ export const dynamic = "force-dynamic";
 const modelNameCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
 function compareModelEntries(
-  a: { id: string; name: string; provider: string },
-  b: { id: string; name: string; provider: string }
+  a: ModelEntry,
+  b: ModelEntry
 ): number {
   return modelNameCollator.compare(a.name || a.id, b.name || b.id)
     || modelNameCollator.compare(a.provider, b.provider)
     || modelNameCollator.compare(a.id, b.id);
 }
 
+type ModelEntry = { id: string; name: string; provider: string; supportsImages: boolean };
+
 async function loadModels(cwd: string): Promise<ModelsData> {
   const nameMap = new Map<string, string>();
-  let modelList: { id: string; name: string; provider: string }[] = [];
+  let modelList: ModelEntry[] = [];
   let defaultModel: { provider: string; modelId: string } | null = null;
   const thinkingLevels: Record<string, string[]> = {};
   const thinkingLevelMaps: Record<string, Record<string, string | null>> = {};
@@ -50,6 +52,7 @@ async function loadModels(cwd: string): Promise<ModelsData> {
     id: m.id,
     name: m.name,
     provider: m.provider,
+    supportsImages: m.input?.includes("image") ?? false,
   })).sort(compareModelEntries);
   for (const m of visible) {
     const key = `${m.provider}:${m.id}`;

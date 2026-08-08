@@ -28,6 +28,7 @@ interface ModelOption {
   provider: string;
   modelId: string;
   name: string;
+  supportsImages?: boolean;
 }
 
 interface Props {
@@ -40,7 +41,7 @@ interface Props {
   model?: { provider: string; modelId: string } | null;
   isAutoModelSelection?: boolean;
   modelNames?: Record<string, string>;
-  modelList?: { id: string; name: string; provider: string }[];
+  modelList?: { id: string; name: string; provider: string; supportsImages?: boolean }[];
   modelError?: string | null;
   /** Diagnostics from resolving `enabledModels`, e.g. a pattern that matched nothing. */
   modelScopeWarnings?: string[];
@@ -1096,7 +1097,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   // Build model options: prefer modelList (has provider info), fallback to modelNames
   const modelOptions: ModelOption[] = (() => {
     if (modelList && modelList.length > 0) {
-      return modelList.map((m) => ({ provider: m.provider, modelId: m.id, name: m.name })).sort(compareModelOptions);
+      return modelList.map((m) => ({ provider: m.provider, modelId: m.id, name: m.name, supportsImages: m.supportsImages })).sort(compareModelOptions);
     }
     return Object.entries(modelNames ?? {}).map(([modelId, name]) => ({
       provider: model?.provider ?? "unknown",
@@ -1119,6 +1120,13 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
     ? (modelOptions.find((o) => o.modelId === model.modelId && o.provider === model.provider)?.name ?? model.modelId)
     : null;
   const currentName = displayModelName;
+
+  // Whether the current model accepts image attachments. Unknown models default
+  // to supporting images so we never block a capability the UI can't verify.
+  const currentSupportsImages = model
+    ? (modelOptions.find((o) => o.modelId === model.modelId && o.provider === model.provider)?.supportsImages ?? true)
+    : true;
+  const nonVisionImageWarning = !currentSupportsImages && attachedImages.length > 0;
 
   const compactSavedTokens = compactResult
     ? Math.max(0, compactResult.tokensBefore - compactResult.estimatedTokensAfter)
@@ -1335,6 +1343,27 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 </button>
               </div>
             ))}
+          </div>
+        )}
+        {nonVisionImageWarning && (
+          <div style={{
+            display: "flex", alignItems: "flex-start", gap: 6,
+            marginBottom: 6, padding: "5px 8px",
+            background: "color-mix(in srgb, var(--accent) 10%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--accent) 35%, transparent)",
+            borderRadius: 6,
+            fontSize: 11,
+            color: "var(--text-muted)",
+            lineHeight: 1.4,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>
+              当前模型不支持图片输入，图片将以文件路径形式发送，模型可通过 read / OCR 工具读取内容。
+            </span>
           </div>
         )}
 

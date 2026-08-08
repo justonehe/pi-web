@@ -10,6 +10,7 @@ import { resolveVisibleModels, selectInitialModelScope } from "./model-scope";
 import { cacheSessionPath, invalidateSessionListCache } from "./session-reader";
 import { getProjectTrustStatus, projectTrustReloadOptions } from "./project-trust";
 import { persistExplicitStartupPreferences } from "./startup-preferences";
+import { imagesToTempFiles, modelSupportsImages } from "./image-files";
 import type { SlashCommandInfo } from "@earendil-works/pi-coding-agent";
 import type { AgentSessionLike, ExtensionUiContextLike, ToolInfo } from "./pi-types";
 import type { ExtensionUiRequest, ExtensionUiResponse, ExtensionWidgetItem } from "./types";
@@ -371,12 +372,26 @@ export class AgentSessionWrapper {
           throw new Error("Cannot send a prompt while a shell command is running");
         }
         // Fire and forget — events come via subscribe
+        let promptMessage = command.message as string;
         const promptImages = command.images as Array<{ type: "image"; data: string; mimeType: string }> | undefined;
         const streamingBehavior = command.streamingBehavior as "steer" | "followUp" | undefined;
+        // Models without vision support receive attached images as file paths
+        // (TUI parity): the image is written to the temp dir and the message
+        // references it by path, so the model can read the file and run OCR
+        // instead of silently dropping the image.
+        const model = this.inner.model;
+        const supportsImages = modelSupportsImages(model?.input);
+        let effectiveImages = promptImages;
+        if (promptImages?.length && !supportsImages) {
+          const pathLines = imagesToTempFiles(promptImages);
+          const prefix = pathLines.join("\n");
+          promptMessage = promptMessage.trim() ? `${prefix}\n${promptMessage}` : prefix;
+          effectiveImages = undefined;
+        }
         this.promptRunning = true;
         notifyRunningChange();
-        this.inner.prompt(command.message as string, {
-          ...(promptImages?.length ? { images: promptImages } : {}),
+        this.inner.prompt(promptMessage, {
+          ...(effectiveImages?.length ? { images: effectiveImages } : {}),
           ...(streamingBehavior ? { streamingBehavior } : {}),
           source: "rpc",
         }).then(() => {

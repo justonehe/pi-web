@@ -11,6 +11,7 @@ import { isEditToolName } from "@/lib/tool-names";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
 import type { WrittenFile } from "@/lib/turn-written-files";
 import { skillExpansionToCommand } from "@/lib/slash-display";
+import { extractImagePaths, IMAGE_PATH_TOKEN_GLOBAL_RE } from "@/lib/image-path";
 import type {
   AgentMessage,
   UserMessage,
@@ -205,6 +206,18 @@ function UserMessageView({ message, cwd, onOpenFile, entryId, onFork, forking, o
     ? commandText.slice(commandSeparator + 1)
     : "";
 
+  // Image attachments under non-vision models arrive as temp-dir file paths
+  // in the message text. Render those paths as images instead of raw text
+  // (the model still receives the path, matching TUI behavior).
+  const tempImagePaths = extractImagePaths(content);
+  const textWithoutTempImages = tempImagePaths.length
+    ? content
+        .replace(IMAGE_PATH_TOKEN_GLOBAL_RE(), "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+    : content;
+  const [hiddenTempImages, setHiddenTempImages] = useState<Set<string>>(() => new Set());
+
   const time = formatTime(message.timestamp);
   const canFork = !!entryId && !!onFork;
   const copyTarget = commandText ?? content;
@@ -327,7 +340,25 @@ function UserMessageView({ message, cwd, onOpenFile, entryId, onFork, forking, o
           ) : (
           <>
           {imageBlocksNode}
-          {content && <MarkdownBody className="markdown-user-message" cwd={cwd} onOpenFile={onOpenFile}>{content}</MarkdownBody>}
+          {tempImagePaths.length > 0 && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: textWithoutTempImages ? 8 : 0 }}>
+              {tempImagePaths.map((p, i) => (
+                hiddenTempImages.has(p) ? null : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={`/api/image-file?path=${encodeURIComponent(p)}`}
+                    alt=""
+                    onError={() => setHiddenTempImages((prev) => new Set(prev).add(p))}
+                    style={{ maxWidth: 240, maxHeight: 240, borderRadius: 6, objectFit: "contain", display: "block", border: "1px solid rgba(59,130,246,0.15)" }}
+                  />
+                )
+              ))}
+            </div>
+          )}
+          {(textWithoutTempImages || (!imageBlocks.length && !tempImagePaths.length)) && (
+            <MarkdownBody className="markdown-user-message" cwd={cwd} onOpenFile={onOpenFile}>{textWithoutTempImages}</MarkdownBody>
+          )}
           </>
           )}
         </div>

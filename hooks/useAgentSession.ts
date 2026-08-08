@@ -288,7 +288,7 @@ export interface AttachedImage {
 
 type SelectedModel = { provider: string; modelId: string };
 type PromptRecoveryState = PromptRecoverySnapshot & { failed: boolean };
-type ModelEntry = { id: string; name: string; provider: string };
+type ModelEntry = { id: string; name: string; provider: string; supportsImages?: boolean };
 type ModelsResponse = {
   models: Record<string, string>;
   modelList?: ModelEntry[];

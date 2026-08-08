@@ -15,6 +15,8 @@ export interface ContextUsage {
 export interface ModelLike {
   id: string;
   provider: string;
+  /** Input modalities the model accepts ("text" | "image"). Absent when unknown. */
+  input?: Array<"text" | "image">;
 }
 
 export interface ToolInfo {
