@@ -77,6 +77,7 @@ npx @agegr/pi-web@latest
 - **Chat beside the project**: browse files on the left and preview source, docs, images, audio, and PDFs on the right while the agent works.
 - **See session state clearly**: context usage, cost, compaction state, and system prompt details are visible from the top bar.
 - **Configure less from the terminal**: manage models, login/API keys, model tests, and skill switches from the web UI.
+- **Attach images for any model**: vision-capable models receive images directly; non-vision models get the image as a temp-dir file path (TUI parity) so they can read the file and run OCR, while the chat still renders the image inline.
 - **Use the interface in your language**: switch between the supported UI languages from the top bar.
 
 ## Notes
