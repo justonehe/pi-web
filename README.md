@@ -22,8 +22,8 @@
 
 ### 3. 其他
 
-- README 已精简为本文件，不保留上游原始文档。
-- 依赖锁文件已随 pi-coding-agent 0.84 更新。
+- README 已精简为本文件，不保留上游原始文档（上游 README 可用 `git show origin/main:README.md` 查看）。
+- 已合并上游 v0.8.9（pi-coding-agent 0.84.2）。
 
 ## 运行
 
@@ -48,3 +48,9 @@ git remote add upstream https://github.com/agegr/pi-web.git
 git fetch upstream
 git rebase upstream/main
 ```
+
+See [AGENTS.md](./AGENTS.md) for the architecture notes and detailed file map.
+
+## License
+
+[MIT](./LICENSE)
