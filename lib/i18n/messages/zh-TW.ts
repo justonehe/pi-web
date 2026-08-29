@@ -353,6 +353,7 @@ export const zhTWLocale: LocalePlugin = {
     "chat.commandReload": "重新載入擴充功能、技能、提示詞和工具",
     "chat.commandName": "設定工作階段顯示名稱",
     "chat.commandSession": "顯示工作階段的訊息、Token 和費用統計",
+    "chat.commandTree": "瀏覽完整的對話樹",
     "chat.commandCopy": "複製最後一則助理訊息",
     "chat.commandClone": "將目前分支複製為獨立新工作階段",
     "chat.compacted": "已壓縮",
